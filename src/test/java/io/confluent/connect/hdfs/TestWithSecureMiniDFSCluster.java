@@ -1,19 +1,21 @@
-/**
- * Copyright 2015 Confluent Inc.
+/*
+ * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.confluent.io/confluent-community-license
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- **/
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OF ANY KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 
 package io.confluent.connect.hdfs;
 
+import io.confluent.connect.storage.common.StorageCommonConfig;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
@@ -90,16 +92,15 @@ public class TestWithSecureMiniDFSCluster extends HdfsSinkConnectorTestBase {
     FileUtil.fullyDelete(baseDir);
   }
 
-  @Before
+  //@Before should be omitted in order to be able to add properties per test.
   public void setUp() throws Exception {
-    super.setUp();
     conf = createSecureConfig("authentication");
     cluster = createDFSCluster(conf);
     cluster.waitActive();
-    url = "hdfs://" + cluster.getNameNode().getClientNamenodeAddress();
     fs = cluster.getFileSystem();
     Map<String, String> props = createProps();
     connectorConfig = new HdfsSinkConnectorConfig(props);
+    super.setUp();
   }
 
   @After
@@ -148,7 +149,9 @@ public class TestWithSecureMiniDFSCluster extends HdfsSinkConnectorTestBase {
   @Override
   protected Map<String, String> createProps() {
     Map<String, String> props = super.createProps();
+    url = "hdfs://" + cluster.getNameNode().getClientNamenodeAddress();
     props.put(HdfsSinkConnectorConfig.HDFS_URL_CONFIG, url);
+    props.put(StorageCommonConfig.STORE_URL_CONFIG, url);
     props.put(HdfsSinkConnectorConfig.HDFS_AUTHENTICATION_KERBEROS_CONFIG, "true");
     // if we use the connect principal to authenticate with secure Hadoop, the following
     // error shows up: Auth failed for 127.0.0.1:63101:null (GSS initiate failed).

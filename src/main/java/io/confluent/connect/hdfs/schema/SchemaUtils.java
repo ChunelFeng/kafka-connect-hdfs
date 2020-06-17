@@ -1,16 +1,17 @@
-/**
- * Copyright 2015 Confluent Inc.
+/*
+ * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.confluent.io/confluent-community-license
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- **/
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OF ANY KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 
 package io.confluent.connect.hdfs.schema;
 
@@ -19,6 +20,7 @@ import org.apache.kafka.connect.data.SchemaProjector;
 import org.apache.kafka.connect.errors.SchemaProjectorException;
 import org.apache.kafka.connect.sink.SinkRecord;
 
+@Deprecated
 public class SchemaUtils {
 
   public static Compatibility getCompatibility(String compatibilityString) {
@@ -34,12 +36,19 @@ public class SchemaUtils {
     }
   }
 
-  public static boolean shouldChangeSchema(Schema valueSchema, Schema currentSchema, Compatibility compatibility) {
+  public static boolean shouldChangeSchema(
+      Schema valueSchema,
+      Schema currentSchema,
+      Compatibility compatibility
+  ) {
     if (currentSchema == null) {
       return true;
     }
-    if ((valueSchema.version() == null || currentSchema.version() == null) && compatibility != Compatibility.NONE) {
-      throw new SchemaProjectorException("Schema version required for " + compatibility.toString() + " compatibility");
+    if ((valueSchema.version() == null || currentSchema.version() == null)
+        && compatibility != Compatibility.NONE) {
+      throw new SchemaProjectorException("Schema version required for "
+          + compatibility.toString()
+          + " compatibility");
     }
     switch (compatibility) {
       case BACKWARD:
@@ -53,7 +62,11 @@ public class SchemaUtils {
   }
 
 
-  public static SinkRecord project(SinkRecord record, Schema currentSchema, Compatibility compatibility) {
+  public static SinkRecord project(
+      SinkRecord record,
+      Schema currentSchema,
+      Compatibility compatibility
+  ) {
     switch (compatibility) {
       case BACKWARD:
       case FULL:
@@ -64,8 +77,15 @@ public class SchemaUtils {
           return record;
         }
         Object projected = SchemaProjector.project(sourceSchema, value, currentSchema);
-        return new SinkRecord(record.topic(), record.kafkaPartition(), record.keySchema(),
-                              record.key(), currentSchema, projected, record.kafkaOffset());
+        return new SinkRecord(
+            record.topic(),
+            record.kafkaPartition(),
+            record.keySchema(),
+            record.key(),
+            currentSchema,
+            projected,
+            record.kafkaOffset()
+        );
       default:
         return record;
     }

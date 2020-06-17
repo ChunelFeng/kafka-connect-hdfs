@@ -1,18 +1,17 @@
-/**
- * Copyright 2015 Confluent Inc.
+/*
+ * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.confluent.io/confluent-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **/
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OF ANY KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 
 package io.confluent.connect.hdfs.parquet;
 
@@ -25,23 +24,28 @@ import org.apache.kafka.connect.data.Schema;
 
 import java.util.List;
 
-import io.confluent.connect.avro.AvroData;
-import io.confluent.connect.hdfs.FileUtils;
+import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import io.confluent.connect.hdfs.hive.HiveMetaStore;
-import io.confluent.connect.hdfs.hive.HiveSchemaConverter;
 import io.confluent.connect.hdfs.hive.HiveUtil;
 import io.confluent.connect.hdfs.partitioner.Partitioner;
-import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
-import io.confluent.connect.hdfs.errors.HiveMetaStoreException;
+import io.confluent.connect.storage.errors.HiveMetaStoreException;
+import io.confluent.connect.storage.hive.HiveSchemaConverter;
 
 public class ParquetHiveUtil extends HiveUtil {
+  private final HdfsSinkConnectorConfig config;
 
-  public ParquetHiveUtil(HdfsSinkConnectorConfig connectorConfig, AvroData avroData, HiveMetaStore hiveMetaStore) {
-    super(connectorConfig, avroData, hiveMetaStore);
+  public ParquetHiveUtil(HdfsSinkConnectorConfig conf, HiveMetaStore hiveMetaStore) {
+    super(conf, hiveMetaStore);
+    this.config = conf;
   }
 
   @Override
-  public void createTable(String database, String tableName, Schema schema, Partitioner partitioner) throws HiveMetaStoreException {
+  public void createTable(
+      String database,
+      String tableName,
+      Schema schema,
+      Partitioner partitioner
+  ) throws HiveMetaStoreException {
     Table table = constructParquetTable(database, tableName, schema, partitioner);
     hiveMetaStore.createTable(table);
   }
@@ -54,11 +58,17 @@ public class ParquetHiveUtil extends HiveUtil {
     hiveMetaStore.alterTable(table);
   }
 
-  private Table constructParquetTable(String database, String tableName, Schema schema, Partitioner partitioner) throws HiveMetaStoreException {
+  private Table constructParquetTable(
+      String database,
+      String tableName,
+      Schema schema,
+      Partitioner partitioner
+  ) throws HiveMetaStoreException {
     Table table = newTable(database, tableName);
     table.setTableType(TableType.EXTERNAL_TABLE);
     table.getParameters().put("EXTERNAL", "TRUE");
-    String tablePath = FileUtils.hiveDirectoryName(url, topicsDir, tableName);
+    // tableName is always the topic name
+    String tablePath = hiveDirectoryName(url, config.getTopicsDirFromTopic(tableName), tableName);
     table.setDataLocation(new Path(tablePath));
     table.setSerializationLib(getHiveParquetSerde());
     try {
@@ -67,7 +77,7 @@ public class ParquetHiveUtil extends HiveUtil {
     } catch (HiveException e) {
       throw new HiveMetaStoreException("Cannot find input/output format:", e);
     }
-    // convert copycat schema schema to Hive columns
+    // convert Connect schema schema to Hive columns
     List<FieldSchema> columns = HiveSchemaConverter.convertSchema(schema);
     table.setFields(columns);
     table.setPartCols(partitioner.partitionFields());

@@ -1,16 +1,17 @@
-/**
- * Copyright 2015 Confluent Inc.
+/*
+ * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.confluent.io/confluent-community-license
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- **/
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OF ANY KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 
 package io.confluent.connect.hdfs.partitioner;
 
@@ -24,16 +25,21 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import io.confluent.connect.hdfs.HdfsSinkConnectorTestBase;
+import io.confluent.connect.storage.hive.schema.TimeBasedSchemaGenerator;
+import io.confluent.connect.storage.partitioner.PartitionerConfig;
+
 import static org.junit.Assert.assertEquals;
 
-public class TimeBasedPartitionerTest {
+public class TimeBasedPartitionerTest extends HdfsSinkConnectorTestBase {
   private static final String timeZoneString = "America/Los_Angeles";
   private static final DateTimeZone DATE_TIME_ZONE = DateTimeZone.forID(timeZoneString);
-  private BiHourlyPartitioner partitioner = new BiHourlyPartitioner();
 
   @Test
   public void testGeneratePartitionedPath() throws Exception {
-    partitioner.configure(null);
+    setUp();
+    BiHourlyPartitioner partitioner = new BiHourlyPartitioner();
+    partitioner.configure(parsedConfig);
     String pathFormat = partitioner.getPathFormat();
     long partitionDurationMs = TimeUnit.HOURS.toMillis(2);
     long timestamp = new DateTime(2015, 1, 1, 3, 0, 0, 0, DateTimeZone.forID(timeZoneString)).getMillis();
@@ -60,7 +66,7 @@ public class TimeBasedPartitionerTest {
 
     @Override
     public void configure(Map<String, Object> config) {
-      init(partitionDurationMs, pathFormat, Locale.FRENCH, DATE_TIME_ZONE, true);
+      init(partitionDurationMs, pathFormat, Locale.FRENCH, DATE_TIME_ZONE, config);
     }
 
     public String getPathFormat() {

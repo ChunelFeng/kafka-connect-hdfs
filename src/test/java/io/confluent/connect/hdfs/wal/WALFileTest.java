@@ -1,18 +1,17 @@
-/**
- * Copyright 2015 Confluent Inc.
+/*
+ * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.confluent.io/confluent-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **/
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OF ANY KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 
 package io.confluent.connect.hdfs.wal;
 
@@ -21,7 +20,6 @@ import org.apache.kafka.common.TopicPartition;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Map;
 
 import io.confluent.connect.hdfs.FileUtils;
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
@@ -33,18 +31,20 @@ import static org.junit.Assert.assertNull;
 public class WALFileTest extends TestWithMiniDFSCluster {
 
   @Test
-  public void testeAppend() throws Exception {
-    Map<String, String> props = createProps();
-    HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
+  public void testAppend() throws Exception {
+    setUp();
+    properties.put(HdfsSinkConnectorConfig.TOPIC_CAPTURE_GROUPS_REGEX_CONFIG, "(.*)");
+    HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(properties);
 
-    String topicsDir = connectorConfig.getString(HdfsSinkConnectorConfig.TOPICS_DIR_CONFIG);
     String topic = "topic";
+    String topicsDir = connectorConfig.getTopicsDirFromTopic(topic);
+
     int partition = 0;
     TopicPartition topicPart = new TopicPartition(topic, partition);
 
     Path file = new Path(FileUtils.logFileName(url, topicsDir, topicPart));
 
-    WALFile.Writer writer = WALFile.createWriter(conf, WALFile.Writer.file(file));
+    WALFile.Writer writer = WALFile.createWriter(connectorConfig, WALFile.Writer.file(file));
 
     WALEntry key1 = new WALEntry("key1");
     WALEntry val1 = new WALEntry("val1");
@@ -58,7 +58,11 @@ public class WALFileTest extends TestWithMiniDFSCluster {
 
     verify2Values(file);
 
-    writer = WALFile.createWriter(conf, WALFile.Writer.file(file), WALFile.Writer.appendIfExists(true));
+    writer = WALFile.createWriter(
+        connectorConfig,
+        WALFile.Writer.file(file),
+        WALFile.Writer.appendIfExists(true)
+    );
 
     WALEntry key3 = new WALEntry("key3");
     WALEntry val3 = new WALEntry("val3");

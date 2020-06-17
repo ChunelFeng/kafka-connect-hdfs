@@ -1,16 +1,17 @@
-/**
- * Copyright 2015 Confluent Inc.
+/*
+ * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.confluent.io/confluent-community-license
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- **/
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OF ANY KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 
 package io.confluent.connect.hdfs;
 
@@ -29,6 +30,8 @@ import io.confluent.connect.hdfs.utils.Data;
 import io.confluent.connect.hdfs.utils.MemoryFormat;
 import io.confluent.connect.hdfs.utils.MemoryRecordWriter;
 import io.confluent.connect.hdfs.utils.MemoryStorage;
+import io.confluent.connect.storage.common.StorageCommonConfig;
+import io.confluent.connect.storage.format.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -44,16 +47,13 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
   @Override
   protected Map<String, String> createProps() {
     Map<String, String> props = super.createProps();
-    props.put(HdfsSinkConnectorConfig.STORAGE_CLASS_CONFIG, MemoryStorage.class.getName());
+    props.put(StorageCommonConfig.STORAGE_CLASS_CONFIG, MemoryStorage.class.getName());
     props.put(HdfsSinkConnectorConfig.FORMAT_CLASS_CONFIG, MemoryFormat.class.getName());
     return props;
   }
 
   @Test
   public void testCommitFailure() throws Exception {
-    Map<String, String> props = createProps();
-    HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
-
     String key = "key";
     Schema schema = createSchema();
     Struct record = createRecord(schema);
@@ -87,15 +87,12 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
     content = data.get(logFile);
     assertEquals(6, content.size());
 
-    hdfsWriter.close(assignment);
+    hdfsWriter.close();
     hdfsWriter.stop();
   }
 
   @Test
   public void testWriterFailureMultiPartitions() throws Exception {
-    Map<String, String> props = createProps();
-    HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
-
     String key = "key";
     Schema schema = createSchema();
     Struct record = createRecord(schema);
@@ -121,7 +118,7 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
     }
 
     String encodedPartition = "partition=" + String.valueOf(PARTITION);
-    Map<String, RecordWriter<SinkRecord>> writers = hdfsWriter.getWriters(TOPIC_PARTITION);
+    Map<String, io.confluent.connect.storage.format.RecordWriter> writers = hdfsWriter.getWriters(TOPIC_PARTITION);
     MemoryRecordWriter writer = (MemoryRecordWriter) writers.get(encodedPartition);
     writer.setFailure(MemoryRecordWriter.Failure.writeFailure);
     hdfsWriter.write(sinkRecords);
@@ -134,6 +131,7 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
     for (int i = 1; i < validOffsets.length; i++) {
       long startOffset = validOffsets[i - 1] + 1;
       long endOffset = validOffsets[i];
+      String topicsDir = this.topicsDir.get(TOPIC_PARTITION2.topic());
       String path = FileUtils.committedFileName(url, topicsDir, directory2, TOPIC_PARTITION2,
                                                 startOffset, endOffset, extension, ZERO_PAD_FMT);
       long size = endOffset - startOffset + 1;
@@ -163,15 +161,13 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
     }
 
     hdfsWriter.write(new ArrayList<SinkRecord>());
-    hdfsWriter.close(assignment);
+    hdfsWriter.close();
     hdfsWriter.stop();
   }
 
   @Test
   public void testWriterFailure() throws Exception {
-    Map<String, String> props = createProps();
-
-    HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(props);
+    HdfsSinkConnectorConfig connectorConfig = new HdfsSinkConnectorConfig(properties);
 
     String key = "key";
     Schema schema = createSchema();
@@ -190,7 +186,7 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
     }
 
     String encodedPartition = "partition=" + String.valueOf(PARTITION);
-    Map<String, RecordWriter<SinkRecord>> writers = hdfsWriter.getWriters(TOPIC_PARTITION);
+    Map<String, io.confluent.connect.storage.format.RecordWriter> writers = hdfsWriter.getWriters(TOPIC_PARTITION);
     MemoryRecordWriter writer = (MemoryRecordWriter) writers.get(encodedPartition);
 
     writer.setFailure(MemoryRecordWriter.Failure.writeFailure);
@@ -226,7 +222,7 @@ public class FailureRecoveryTest extends HdfsSinkConnectorTestBase {
     }
 
     hdfsWriter.write(new ArrayList<SinkRecord>());
-    hdfsWriter.close(assignment);
+    hdfsWriter.close();
     hdfsWriter.stop();
   }
 }

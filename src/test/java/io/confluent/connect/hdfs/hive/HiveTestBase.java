@@ -1,26 +1,26 @@
-/**
- * Copyright 2015 Confluent Inc.
+/*
+ * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.confluent.io/confluent-community-license
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OF ANY KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 
 package io.confluent.connect.hdfs.hive;
 
 import org.junit.After;
-import org.junit.Before;
 
 import java.util.Map;
 
-import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
 import io.confluent.connect.hdfs.TestWithMiniDFSCluster;
+import io.confluent.connect.storage.hive.HiveConfig;
 
 public class HiveTestBase extends TestWithMiniDFSCluster {
 
@@ -28,10 +28,17 @@ public class HiveTestBase extends TestWithMiniDFSCluster {
   protected HiveMetaStore hiveMetaStore;
   protected HiveExec hiveExec;
 
-  @Before
+  @Override
+  protected Map<String, String> createProps() {
+    Map<String, String> props = super.createProps();
+    props.put(HiveConfig.HIVE_CONF_DIR_CONFIG, "src/test/resources/conf");
+    return props;
+  }
+
+  //@Before should be omitted in order to be able to add properties per test.
   public void setUp() throws Exception {
     super.setUp();
-    hiveDatabase = connectorConfig.getString(HdfsSinkConnectorConfig.HIVE_DATABASE_CONFIG);
+    hiveDatabase = connectorConfig.getString(HiveConfig.HIVE_DATABASE_CONFIG);
     hiveMetaStore = new HiveMetaStore(conf, connectorConfig);
     hiveExec = new HiveExec(connectorConfig);
     cleanHive();
@@ -43,14 +50,7 @@ public class HiveTestBase extends TestWithMiniDFSCluster {
     super.tearDown();
   }
 
-  @Override
-  protected Map<String, String> createProps() {
-    Map<String, String> props = super.createProps();
-    props.put(HdfsSinkConnectorConfig.HIVE_CONF_DIR_CONFIG, "hive_conf");
-    return props;
-  }
-
-  private void cleanHive() throws Exception {
+  private void cleanHive() {
     // ensures all tables are removed
     for (String database : hiveMetaStore.getAllDatabases()) {
       for (String table : hiveMetaStore.getAllTables(database)) {

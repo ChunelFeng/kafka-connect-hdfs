@@ -1,18 +1,17 @@
-/**
- * Copyright 2015 Confluent Inc.
+/*
+ * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.confluent.io/confluent-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- **/
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OF ANY KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 
 package io.confluent.connect.hdfs.hive;
 
@@ -30,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import io.confluent.connect.hdfs.HdfsSinkConnectorConfig;
+import io.confluent.connect.storage.hive.HiveConfig;
 
 public class HiveExec {
 
@@ -44,7 +44,7 @@ public class HiveExec {
    */
   public HiveExec(HdfsSinkConnectorConfig config) {
     hiveConf = new HiveConf();
-    String hiveConfDir = config.getString(HdfsSinkConnectorConfig.HIVE_CONF_DIR_CONFIG);
+    String hiveConfDir = config.getString(HiveConfig.HIVE_CONF_DIR_CONFIG);
     hiveConf.addResource(new Path(hiveConfDir, "hive-site.xml"));
     SessionState.start(new CliSessionState(hiveConf));
     cliDriver = new CliDriver();
@@ -70,7 +70,7 @@ public class HiveExec {
   }
 
 
-  private String[] getHiveArgs(String... args) throws IOException {
+  private String[] getHiveArgs(String... args) {
     List<String> newArgs = new LinkedList<>();
     newArgs.addAll(Arrays.asList(args));
     if (hiveConf.getBoolean(HIVE_SASL_ENABLED, false)) {
